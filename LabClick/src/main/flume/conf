@@ -1,0 +1,20 @@
+action.sinks = sink1
+action.sources = source1
+action.channels = channel1
+
+action.sources.source1.type = spooldir
+action.sources.source1.spoolDir = /Volumes/steam/opt/labs/kafka/l2/w1/LabClick/src/main/resources/data
+action.sources.source1.fileHeader = false
+action.sources.source1.channels = channel1
+action.sources.source1.fileSuffix = .COMPLETED
+
+
+action.channels.channel1.type = memory
+action.channels.channel1.capacity = 10000
+action.channels.channel1.transactionCapacity = 100
+
+action.sinks.sink1.type = org.apache.flume.sink.kafka.KafkaSink
+action.sinks.sink1.topic = lab_action
+action.sinks.sink1.brokerList = localhost:9092
+action.sinks.sink1.channel = channel1
+action.sinks.sink1.batchSize = 20
