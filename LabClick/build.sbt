@@ -15,11 +15,17 @@ spDependencies += "datastax/spark-cassandra-connector:2.0.1-s_2.11"
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.1.0"
 libraryDependencies += "org.apache.spark" %% "spark-streaming" % "2.1.0"
+
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.1.0"
 libraryDependencies += "org.apache.spark" %% "spark-hive" % "2.1.0"
-//libraryDependencies += "org.apache.spark" %% "spark-streaming-kafka-0-8" % "2.1.0"
+
 libraryDependencies += "org.apache.spark" %% "spark-streaming-kafka" % "1.6.0"
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.6.1"
+
+//libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+libraryDependencies +=  "junit" % "junit" % "4.8.1" % "test"
+
+
 
 assemblyJarName in assembly := s"${name.value.replace(' ','-')}-${version.value}.jar"
 
