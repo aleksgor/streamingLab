@@ -4,24 +4,24 @@ version := "0.1"
 
 scalaVersion := "2.11.12"
 
-sparkVersion := "2.1.0"
+sparkVersion := "2.3.2"
 
 sparkComponents ++= Seq("sql", "streaming")
 
 
 spDependencies += "datastax/spark-cassandra-connector:2.0.1-s_2.11"
 
-//libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.10"
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.2"
 libraryDependencies += "org.apache.spark" %% "spark-streaming" % "2.3.2"
 
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.3.2"
-libraryDependencies += "org.apache.spark" %% "spark-hive" % "2.3.2"
 
-libraryDependencies += "org.apache.spark" %% "spark-streaming-kafka" % "1.6.0"
+libraryDependencies += "org.apache.spark" %% "spark-sql-kafka-0-10" % "2.3.2"
+
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.6.1"
 
+libraryDependencies += "org.scala-lang" % "scala-library-all" % "2.11.12"
 
 assemblyJarName in assembly := s"${name.value.replace(' ','-')}-${version.value}.jar"
 

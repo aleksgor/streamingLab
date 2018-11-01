@@ -35,7 +35,7 @@ object FraudDetection {
 
     val sparkSession = SparkSession.builder
       .master("local[*]")
-      .appName("StructuredNetworkWordCount")
+      .appName("FraudDetection")
       .config("spark.driver.memory", "2g")
       .config("spark.cassandra.connection.host", "localhost")
       .config("spark.cleaner.ttl", ttl)
@@ -77,7 +77,7 @@ object FraudDetection {
 
     df1.printSchema()
     println(df1.isStreaming)
-
+/*
     val query = df1.writeStream
       .format("org.apache.spark.sql.cassandra")
       .option("keyspace", "lab1")
@@ -85,6 +85,8 @@ object FraudDetection {
       .option("spark.cleaner.ttl", ttl)
       .outputMode(OutputMode.Append())
       .start()
+  */
+
     /*
 
     val query = df1.writeStream
@@ -95,13 +97,13 @@ object FraudDetection {
       .option("spark.cleaner.ttl", ttl)
       .start()
 
-
+*/
     val query = df1.writeStream
       .outputMode("append")
       .queryName("table")
       .format("console")
       .start()
-*/
+
     query.awaitTermination()
     spark.stop()
 
