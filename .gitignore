@@ -6,3 +6,4 @@
 src
 **/*.txt.*
 **/.flumespool
+.history

@@ -1,42 +1,37 @@
-name := "fd2"
+name := "LabClick"
 
 version := "0.1"
 
 scalaVersion := "2.11.12"
 
-name := "fraudDetection2"
+sparkVersion := "2.1.0"
 
-version := "0.1"
-
-scalaVersion := "2.11.12"
-val dseVersion = "6.0.4"
+sparkComponents ++= Seq("sql", "streaming")
 
 
+spDependencies += "datastax/spark-cassandra-connector:2.0.1-s_2.11"
 
-addSbtPlugin("com.fhuertas" % "cassandra-sink" % "1.0.0")
-
-
-resolvers += Resolver.mavenLocal // for testing
-resolvers += "DataStax Repo" at "https://repo.datastax.com/public-repos/"
-
-
-resolvers += "oss sonatype" at "https://oss.sonatype.org/content/repositories/releases/"
+//libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.10"
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.2"
 libraryDependencies += "org.apache.spark" %% "spark-streaming" % "2.3.2"
 
-libraryDependencies += "org.apache.spark" %% "spark-sql-kafka-0-10" % "2.3.2"
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.3.2"
+libraryDependencies += "org.apache.spark" %% "spark-hive" % "2.3.2"
 
-libraryDependencies += "com.fhuertas" %% "cassandra_sink_2.2.1" % "1.0.0"
-
-//libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.3.2"
-
-//libraryDependencies += "com.datastax.dse" % "dse-spark-dependencies" % dseVersion exclude(
-//  "org.slf4j", "log4j-over-slf4j")
+libraryDependencies += "org.apache.spark" %% "spark-streaming-kafka" % "1.6.0"
+libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.6.1"
 
 
-lazy val excludeJpountz = ExclusionRule(organization = "net.jpountz.lz4", name = "lz4")
+assemblyJarName in assembly := s"${name.value.replace(' ','-')}-${version.value}.jar"
 
+assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
-lazy val kafkaClients = "org.apache.kafka" % "kafka-clients" % "0.10.0. 1" excludeAll(excludeJpountz)
+assemblyMergeStrategy in assembly := {
+  case m if m.toLowerCase.endsWith("manifest.mf")          => MergeStrategy.discard
+  case m if m.toLowerCase.matches("meta-inf.*\\.sf$")      => MergeStrategy.discard
+  case "log4j.properties"                                  => MergeStrategy.discard
+  case m if m.toLowerCase.startsWith("meta-inf/services/") => MergeStrategy.filterDistinctLines
+  case "reference.conf"                                    => MergeStrategy.concat
+  case _                                                   => MergeStrategy.first
+}
