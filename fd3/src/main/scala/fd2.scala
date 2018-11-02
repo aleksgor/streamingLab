@@ -1,12 +1,16 @@
 
 package org.apache.spark.examples.streaming
 
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+
+import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.sql.{DataFrame, SparkSession, _}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.ForeachWriter
 import org.apache.spark.sql.types._
-
 
 case class NetAction(sType: String, ip: String, time: Long, category_id: String) {
   override def toString(): String = "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
@@ -20,7 +24,7 @@ object FraudDetection {
   val group = "test_lab_action_2"
   val server = "localhost:9092"
   val numItertion = 13
-  val ttl = 432000 // set ttl 5 days
+  val ttl = 60 // set ttl 5 days
   val checkpointDir = "file:///opt/checkpoint"
 
   def main(args: Array[String]): Unit = {
@@ -40,6 +44,8 @@ object FraudDetection {
       .config("spark.cassandra.connection.host", "localhost")
       .config("spark.cleaner.ttl", ttl)
       .getOrCreate()
+
+    val connector = CassandraConnector.apply(sparkSession.sparkContext.getConf)
 
     val df: DataFrame = sparkSession
       .readStream
@@ -77,15 +83,6 @@ object FraudDetection {
 
     df1.printSchema()
     println(df1.isStreaming)
-/*
-    val query = df1.writeStream
-      .format("org.apache.spark.sql.cassandra")
-      .option("keyspace", "lab1")
-      .option("table", "fraud")
-      .option("spark.cleaner.ttl", ttl)
-      .outputMode(OutputMode.Append())
-      .start()
-  */
 
     /*
 
@@ -98,11 +95,41 @@ object FraudDetection {
       .start()
 
 */
+    /*
     val query = df1.writeStream
       .outputMode("append")
       .queryName("table")
       .format("console")
       .start()
+*/
+
+    val writer = new ForeachWriter[Row] {
+      override def open(partitionId: Long, version: Long) = true
+      override def process(value: Row) ={
+        println(value)
+        connector.withSessionDo { session =>
+          session.execute(toCql(   value.getString(value.fieldIndex("ip")),  value.getTimestamp(value.fieldIndex("date")) ) )
+        }
+      }
+      override def close(errorOrNull: Throwable) = {}
+
+
+      def toCql(ip: String, date: Timestamp): String = {
+        val tsSting = toTimeStamp(date)
+        s"""insert into lab1.fraud (ip, datets) values('$ip', '$tsSting') USING TTL """ + ttl
+      }
+
+      def toTimeStamp(input:Timestamp): String = {
+        val df: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+        df.format(input)
+      }
+
+    }
+
+    val query = df1.writeStream
+      .queryName("server-logs processor")
+      .foreach(writer)
+      .start
 
     query.awaitTermination()
     spark.stop()

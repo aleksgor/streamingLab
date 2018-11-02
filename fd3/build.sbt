@@ -9,8 +9,8 @@ sparkVersion := "2.3.2"
 sparkComponents ++= Seq("sql", "streaming")
 
 
-spDependencies += "datastax/spark-cassandra-connector:2.0.1-s_2.11"
-
+//spDependencies += "datastax/spark-cassandra-connector:2.0.1-s_2.11"
+libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "2.3.2"
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.2"
 libraryDependencies += "org.apache.spark" %% "spark-streaming" % "2.3.2"
