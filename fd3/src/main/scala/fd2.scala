@@ -52,7 +52,6 @@ object FraudDetection {
       }
     }
     args.foreach(x => println(x))
-    System.exit(0)
     val windowSize = 100
     val slideSize = 300
 
