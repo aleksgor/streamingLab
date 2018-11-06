@@ -1,6 +1,4 @@
 
-package org.apache.spark.examples.streaming
-
 import java.io.FileInputStream
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
