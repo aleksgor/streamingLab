@@ -5,11 +5,9 @@ import java.text.SimpleDateFormat
 import java.util.Properties
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.sql.{DataFrame, SparkSession, _}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.ForeachWriter
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.{StructType, _}
+import org.apache.spark.sql.{DataFrame, ForeachWriter, SparkSession, _}
 
 case class NetAction(sType: String, ip: String, time: Long, category_id: String) {
   override def toString: String = "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
@@ -21,9 +19,9 @@ object FraudDetection {
   var server = ""
   var ttl = 0 // set ttl 5 days
   var checkpointDir = ""
-  var tableName =""
+  var tableName = ""
 
-  def loadProp(filename: String):Unit= {
+  def loadProp(filename: String): Unit = {
     val props: Properties = new Properties()
     props.load(new FileInputStream(filename))
     topic = props.getProperty("topic", "lab_action1")
@@ -35,13 +33,13 @@ object FraudDetection {
 
   def main(args: Array[String]): Unit = {
     println("start !")
-    args.length match{
-      case 1=>
+    args.length match {
+      case 1 =>
         println("Load file configuration: " + args(0))
         loadProp(args(0))
       case 4 =>
         println("load parameters!")
-        topic= args(0)
+        topic = args(0)
         server = args(1)
         checkpointDir = args(2)
         ttl = args(3).toInt
@@ -98,11 +96,11 @@ object FraudDetection {
         count(when($"type" === "click", 1)).alias("cCount"),
         count(when($"type" === "view", 1)).alias("vCount")
       )
-      .withColumn("div", $"cCount" / $"vCount")
-      .withColumn("sz",size($"categories"))
-      .filter(($"div" > 5  ).or($"clickCount" > 30).or($"sz" > 10))
-      .select($"ip",$"window.start".alias("date"))
-
+      .withColumn("vCount1", when(col("vCount").equalTo(0), 1).otherwise(col("vCount")))
+      .withColumn("div", $"cCount" / $"vCount1")
+      .withColumn("sz", size($"categories"))
+      .filter(($"div" > 5).or($"clickCount" > 30).or($"sz" > 10))
+      .select($"ip", $"window.start".alias("date"))
 
     df1.printSchema()
     println(df1.isStreaming)
@@ -128,12 +126,14 @@ object FraudDetection {
 
     val writer: ForeachWriter[Row] = new ForeachWriter[Row] {
       override def open(partitionId: Long, version: Long) = true
-      override def process(value: Row): Unit ={
+
+      override def process(value: Row): Unit = {
         println(value)
         connector.withSessionDo { session =>
-          session.execute(toCql(   value.getString(value.fieldIndex("ip")),  value.getTimestamp(value.fieldIndex("date")) ) )
+          session.execute(toCql(value.getString(value.fieldIndex("ip")), value.getTimestamp(value.fieldIndex("date"))))
         }
       }
+
       override def close(errorOrNull: Throwable): Unit = {}
 
 
@@ -142,7 +142,7 @@ object FraudDetection {
         s"""insert into $tableName (ip, datets) values('$ip', '$tsSting') USING TTL $ttl"""
       }
 
-      def toTimeStamp(input:Timestamp): String = {
+      def toTimeStamp(input: Timestamp): String = {
         val df: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
         df.format(input)
       }
