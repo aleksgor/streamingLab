@@ -1,13 +1,14 @@
 
 package org.apache.spark.examples.streaming
 
+import java.io.FileInputStream
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.util.Properties
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.sql.{DataFrame, SparkSession, _}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.ForeachWriter
 import org.apache.spark.sql.types._
@@ -17,19 +18,41 @@ case class NetAction(sType: String, ip: String, time: Long, category_id: String)
 }
 
 object FraudDetection {
-  val topic = "lab_action"
-  val topics = Set(topic)
-  val numThreads = 1
-  val zkQuorum = "localhost:2181"
-  val group = "test_lab_action_2"
-  val server = "localhost:9092"
-  val numItertion = 13
-  val ttl = 60 // set ttl 5 days
-  val checkpointDir = "file:///opt/checkpoint"
+  var topic = "lab_action"
+  var server = "localhost:9092"
+  var ttl = 60 // set ttl 5 days
+  var checkpointDir = "file:///opt/checkpoint"
+
+  def loadProp(filename: String):Unit= {
+    val props: Properties = new Properties()
+    props.load(new FileInputStream(filename))
+    topic = props.getProperty("topic", "lab_action1")
+    server = props.getProperty("sparkServer", "localhost:9093")
+    checkpointDir = props.getProperty("checkpointDir", "file:///opt/checkpoint")
+    ttl = props.getProperty("ttl", "600").toInt
+  }
 
   def main(args: Array[String]): Unit = {
-    println("start" + numItertion + "!")
-
+    println("start !")
+    args.length match{
+      case 1=>{
+        println("load file configuration!")
+        loadProp(args(0))
+      }case 4 => {
+        println("load parameters!")
+        topic= args(0)
+        server = args(1)
+        checkpointDir = args(2)
+        ttl = args(3).toInt
+      }
+      case _ =>{
+        println("call format: 1 parameter with configuration file name or 4 parameters with ")
+        println("1: topic name, 2: sparkServer Url, 3:checkpointDir, 4: ttl")
+        System.exit(1)
+      }
+    }
+    args.foreach(x => println(x))
+    System.exit(0)
     val windowSize = 100
     val slideSize = 300
 
@@ -50,7 +73,7 @@ object FraudDetection {
     val df: DataFrame = sparkSession
       .readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", "localhost:9092")
+      .option("kafka.bootstrap.servers", server)
       .option("subscribe", topic)
       .load()
     //      "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
@@ -103,15 +126,15 @@ object FraudDetection {
       .start()
 */
 
-    val writer = new ForeachWriter[Row] {
+    val writer: ForeachWriter[Row] = new ForeachWriter[Row] {
       override def open(partitionId: Long, version: Long) = true
-      override def process(value: Row) ={
+      override def process(value: Row): Unit ={
         println(value)
         connector.withSessionDo { session =>
           session.execute(toCql(   value.getString(value.fieldIndex("ip")),  value.getTimestamp(value.fieldIndex("date")) ) )
         }
       }
-      override def close(errorOrNull: Throwable) = {}
+      override def close(errorOrNull: Throwable): Unit = {}
 
 
       def toCql(ip: String, date: Timestamp): String = {
