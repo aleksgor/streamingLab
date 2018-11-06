@@ -15,6 +15,7 @@ case class NetAction(sType: String, ip: String, time: Long, category_id: String)
   override def toString: String = "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
 }
 
+
 object FraudDetection {
   var topic = ""
   var server = ""
