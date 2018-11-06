@@ -18,10 +18,11 @@ case class NetAction(sType: String, ip: String, time: Long, category_id: String)
 }
 
 object FraudDetection {
-  var topic = "lab_action"
-  var server = "localhost:9092"
-  var ttl = 60 // set ttl 5 days
-  var checkpointDir = "file:///opt/checkpoint"
+  var topic = ""
+  var server = ""
+  var ttl = 0 // set ttl 5 days
+  var checkpointDir = ""
+  var tableName =""
 
   def loadProp(filename: String):Unit= {
     val props: Properties = new Properties()
@@ -30,13 +31,14 @@ object FraudDetection {
     server = props.getProperty("sparkServer", "localhost:9093")
     checkpointDir = props.getProperty("checkpointDir", "file:///opt/checkpoint")
     ttl = props.getProperty("ttl", "600").toInt
+    tableName = props.getProperty("tableName", "lab1.fraud")
   }
 
   def main(args: Array[String]): Unit = {
     println("start !")
     args.length match{
       case 1=>{
-        println("load file configuration!")
+        println("Load file configuration: " + args(0))
         loadProp(args(0))
       }case 4 => {
         println("load parameters!")
@@ -47,7 +49,7 @@ object FraudDetection {
       }
       case _ =>{
         println("call format: 1 parameter with configuration file name or 4 parameters with ")
-        println("1: topic name, 2: sparkServer Url, 3:checkpointDir, 4: ttl")
+        println("1: topic name, 2: sparkServer Url, 3:checkpointDir, 4: ttl. 5: cassandra table name")
         System.exit(1)
       }
     }
@@ -138,7 +140,7 @@ object FraudDetection {
 
       def toCql(ip: String, date: Timestamp): String = {
         val tsSting = toTimeStamp(date)
-        s"""insert into lab1.fraud (ip, datets) values('$ip', '$tsSting') USING TTL """ + ttl
+        s"""insert into $tableName (ip, datets) values('$ip', '$tsSting') USING TTL $ttl"""
       }
 
       def toTimeStamp(input:Timestamp): String = {

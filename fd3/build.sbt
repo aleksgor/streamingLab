@@ -25,6 +25,11 @@ assemblyJarName in assembly := s"${name.value.replace(' ','-')}-${version.value}
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
+lazy val excludeJpountz = ExclusionRule(organization = "net.jpountz.lz4", name = "lz4")
+
+lazy val kafkaClients = "org.apache.kafka" % "kafka-clients" % "0.10.0.1" excludeAll(excludeJpountz) // add more exclusions here
+
+
 assemblyMergeStrategy in assembly := {
   case m if m.toLowerCase.endsWith("manifest.mf")          => MergeStrategy.discard
   case m if m.toLowerCase.matches("meta-inf.*\\.sf$")      => MergeStrategy.discard
