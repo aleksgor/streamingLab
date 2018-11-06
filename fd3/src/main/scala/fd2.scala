@@ -14,7 +14,7 @@ import org.apache.spark.sql.ForeachWriter
 import org.apache.spark.sql.types._
 
 case class NetAction(sType: String, ip: String, time: Long, category_id: String) {
-  override def toString(): String = "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
+  override def toString: String = "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
 }
 
 object FraudDetection {
@@ -37,21 +37,21 @@ object FraudDetection {
   def main(args: Array[String]): Unit = {
     println("start !")
     args.length match{
-      case 1=>{
+      case 1=>
         println("Load file configuration: " + args(0))
         loadProp(args(0))
-      }case 4 => {
+      case 4 =>
         println("load parameters!")
         topic= args(0)
         server = args(1)
         checkpointDir = args(2)
         ttl = args(3).toInt
-      }
-      case _ =>{
+
+      case _ =>
         println("call format: 1 parameter with configuration file name or 4 parameters with ")
         println("1: topic name, 2: sparkServer Url, 3:checkpointDir, 4: ttl. 5: cassandra table name")
         System.exit(1)
-      }
+
     }
     args.foreach(x => println(x))
     val windowSize = 100
@@ -80,10 +80,10 @@ object FraudDetection {
     //      "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
 
     val schema = StructType(Seq(
-      StructField("unix_time", LongType, true),
-      StructField("category_id", StringType, true),
-      StructField("ip", StringType, true),
-      StructField("type", StringType, true)
+      StructField("unix_time", LongType),
+      StructField("category_id", StringType),
+      StructField("ip", StringType),
+      StructField("type", StringType)
 
     ))
     val spark = SparkSession.builder().getOrCreate()
@@ -99,7 +99,7 @@ object FraudDetection {
         count(when($"type" === "click", 1)).alias("cCount"),
         count(when($"type" === "view", 1)).alias("vCount")
       )
-      .withColumn("div",($"cCount" / $"vCount"  ))
+      .withColumn("div", $"cCount" / $"vCount")
       .withColumn("sz",size($"categories"))
       .filter(($"div" > 5  ).or($"clickCount" > 30).or($"sz" > 10))
       .select($"ip",$"window.start".alias("date"))
