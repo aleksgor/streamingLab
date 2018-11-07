@@ -31,6 +31,7 @@ object FraudDetection {
     tableName = props.getProperty("tableName", "lab1.fraud")
   }
 
+
   def main(args: Array[String]): Unit = {
     println("start !")
     args.length match {
@@ -66,6 +67,11 @@ object FraudDetection {
       .config("spark.cleaner.ttl", ttl)
       .getOrCreate()
 
+
+    val zeroProtectedDiv = sparkSession.udf.register("zeroProtectedDiv",(numerator: Double, denominator:Double) => {
+      val correctedDenominator = if ( denominator == 0 )  1.0 else denominator
+      numerator/correctedDenominator
+    }  )
     val connector = CassandraConnector.apply(sparkSession.sparkContext.getConf)
 
     val df: DataFrame = sparkSession
@@ -96,9 +102,10 @@ object FraudDetection {
         count(when($"type" === "click", 1)).alias("cCount"),
         count(when($"type" === "view", 1)).alias("vCount")
       )
-      .withColumn("vCount1", when(col("vCount").equalTo(0), 1).otherwise(col("vCount")))
-      .withColumn("div", $"cCount" / $"vCount1")
+//      .withColumn("vCount1", when(col("vCount").equalTo(0), 1).otherwise(col("vCount")))
+      .withColumn("div", zeroProtectedDiv($"cCount" , $"vCount"))
       .withColumn("sz", size($"categories"))
+      .drop("vCount", "cCount", "categories")
       .filter(($"div" > 5).or($"clickCount" > 30).or($"sz" > 10))
       .select($"ip", $"window.start".alias("date"))
 
