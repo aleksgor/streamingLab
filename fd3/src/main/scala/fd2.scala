@@ -68,7 +68,7 @@ object FraudDetection {
       .getOrCreate()
 
 
-    val zeroProtectedDiv = sparkSession.udf.register("zeroProtectedDiv",(numerator: Double, denominator:Double) => {
+    val viewClickDetector = sparkSession.udf.register("viewClickDetector",(numerator: Double, denominator:Double) => {
       val correctedDenominator = if ( denominator == 0 )  1.0 else denominator
       numerator/correctedDenominator
     }  )
@@ -103,7 +103,7 @@ object FraudDetection {
         count(when($"type" === "view", 1)).alias("vCount")
       )
 //      .withColumn("vCount1", when(col("vCount").equalTo(0), 1).otherwise(col("vCount")))
-      .withColumn("div", zeroProtectedDiv($"cCount" , $"vCount"))
+      .withColumn("div", viewClickDetector($"cCount" , $"vCount"))
       .withColumn("sz", size($"categories"))
       .drop("vCount", "cCount", "categories")
       .filter(($"div" > 5).or($"clickCount" > 30).or($"sz" > 10))
