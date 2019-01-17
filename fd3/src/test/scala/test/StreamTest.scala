@@ -40,6 +40,19 @@ object TestData{
     "{\"unix_time\": 1541583667, \"category_id\": 1005, \"ip\": \"172.10.0.116\", \"type\": \"view\"},",
     "{\"unix_time\": 1541583667, \"category_id\": 1005, \"ip\": \"172.10.0.116\", \"type\": \"view\"},",
     "{\"unix_time\": 1541583667, \"category_id\": 1005, \"ip\": \"172.10.0.116\", \"type\": \"view\"},",
+
+    "{\"unix_time\": 1541583667, \"category_id\": 1003, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1003, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1003, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1003, \"ip\": \"172.10.0.119\", \"type\": \"click\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1005, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1005, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1006, \"ip\": \"172.10.0.119\", \"type\": \"click\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1009, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1009, \"ip\": \"172.10.0.119\", \"type\": \"click\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1009, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+    "{\"unix_time\": 1541583667, \"category_id\": 1011, \"ip\": \"172.10.0.119\", \"type\": \"view\"},",
+
     "{\"unix_time\": 1541583667, \"category_id\": 1005, \"ip\": \"172.10.0.116\", \"type\": \"view\"}")
 
   val data2: List[String] = List(

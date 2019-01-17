@@ -16,7 +16,7 @@ libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.2"
 libraryDependencies += "org.apache.spark" %% "spark-streaming" % "2.3.2"
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.3.2"
 libraryDependencies += "org.apache.spark" %% "spark-sql-kafka-0-10" % "2.3.2"
-
+libraryDependencies += "org.apache.spark" %% "spark-streaming-kafka" % "1.6.0"
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.6.1"
 
 libraryDependencies += "org.scala-lang" % "scala-library-all" % "2.11.12"
@@ -29,6 +29,13 @@ lazy val excludeJpountz = ExclusionRule(organization = "net.jpountz.lz4", name =
 
 lazy val kafkaClients = "org.apache.kafka" % "kafka-clients" % "0.10.0.1" excludeAll(excludeJpountz) // add more exclusions here
 
+libraryDependencies += "net.manub" %% "scalatest-embedded-kafka" % "0.15.1"// % Test
+// unit tests
+// libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.5"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+libraryDependencies += "com.typesafe" % "config" % "1.3.2"
+libraryDependencies += "org.mockito" % "mockito-core" % "1.9.5" % "test"
+libraryDependencies += "com.holdenkarau" %% "spark-testing-base" % "2.1.0_0.8.0" % Test
 
 assemblyMergeStrategy in assembly := {
   case m if m.toLowerCase.endsWith("manifest.mf")          => MergeStrategy.discard
