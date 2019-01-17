@@ -3,7 +3,6 @@
 **/*.log
 **/*.txt
 **/target
-src
 **/*.txt.*
 **/.flumespool
 .history

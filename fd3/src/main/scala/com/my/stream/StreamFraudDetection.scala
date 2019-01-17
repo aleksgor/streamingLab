@@ -1,3 +1,5 @@
+package com.my.stream
+
 
 import java.io.FileInputStream
 import java.sql.Timestamp
@@ -9,17 +11,26 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{StructType, _}
 import org.apache.spark.sql.{DataFrame, ForeachWriter, SparkSession, _}
 
-case class NetAction(sType: String, ip: String, time: Long, category_id: String) {
-  override def toString: String = "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
-}
 
-
-object FraudDetection {
+object StreamFraudDetection {
   var topic = ""
   var server = ""
   var ttl = 0 // set ttl 5 days
   var checkpointDir = ""
   var tableName = ""
+  val windowSize = 300
+  val slideSize = 300
+
+  val windowDuration = s"$windowSize seconds"
+  val slideDuration = s"$slideSize seconds"
+
+  val schema = StructType(Seq(
+    StructField("unix_time", LongType),
+    StructField("category_id", StringType),
+    StructField("ip", StringType),
+    StructField("type", StringType)
+
+  ))
 
   def loadProp(filename: String): Unit = {
     val props: Properties = new Properties()
@@ -52,11 +63,6 @@ object FraudDetection {
 
     }
     args.foreach(x => println(x))
-    val windowSize = 100
-    val slideSize = 300
-
-    val windowDuration = s"$windowSize seconds"
-    val slideDuration = s"$slideSize seconds"
 
 
     val sparkSession = SparkSession.builder
@@ -68,11 +74,6 @@ object FraudDetection {
       .getOrCreate()
 
 
-    val viewClickDetector = sparkSession.udf.register("viewClickDetector",(numerator: Double, denominator:Double) => {
-      val correctedDenominator = if ( denominator == 0 )  1.0 else denominator
-      numerator/correctedDenominator
-    }  )
-    val connector = CassandraConnector.apply(sparkSession.sparkContext.getConf)
 
     val df: DataFrame = sparkSession
       .readStream
@@ -82,17 +83,33 @@ object FraudDetection {
       .load()
     //      "type:" + sType + " ip:" + ip + " time:" + time + " category_id:" + category_id
 
-    val schema = StructType(Seq(
-      StructField("unix_time", LongType),
-      StructField("category_id", StringType),
-      StructField("ip", StringType),
-      StructField("type", StringType)
-
-    ))
-    val spark = SparkSession.builder().getOrCreate()
-    import spark.implicits._
+    val spark:SparkSession = SparkSession.builder().getOrCreate()
     df.sparkSession.sparkContext.setLogLevel("ERROR")
-    val df1 = df.selectExpr("cast (value as string) as json").select(from_json($"json", schema = schema).as("data"))
+
+    val df1 :DataFrame = process(df, spark)
+
+    val writer = getWriter(spark)
+
+    val query = df1.writeStream
+      .queryName("server-logs processor")
+      .foreach(writer)
+      .start
+
+    query.awaitTermination()
+
+    spark.stop()
+
+  }
+
+  def process(df:DataFrame, spark:SparkSession):DataFrame={
+    import spark.implicits._
+
+    val viewClickDetector = spark.udf.register("viewClickDetector",(numerator: Double, denominator:Double) => {
+      val correctedDenominator = if ( denominator == 0 )  1.0 else denominator
+      numerator/correctedDenominator
+    }  )
+
+    df.selectExpr("cast (value as string) as json").select(from_json($"json", schema = schema).as("data"))
       .select($"data.unix_time", $"data.category_id", $"data.ip", $"data.type", from_unixtime($"data.unix_time").cast(TimestampType).as("ts"))
       .withWatermark("ts", "1 seconds")
       .groupBy($"ip", window($"ts", slideDuration, windowDuration))
@@ -102,15 +119,13 @@ object FraudDetection {
         count(when($"type" === "click", 1)).alias("cCount"),
         count(when($"type" === "view", 1)).alias("vCount")
       )
-//      .withColumn("vCount1", when(col("vCount").equalTo(0), 1).otherwise(col("vCount")))
+      //      .withColumn("vCount1", when(col("vCount").equalTo(0), 1).otherwise(col("vCount")))
       .withColumn("div", viewClickDetector($"cCount" , $"vCount"))
       .withColumn("sz", size($"categories"))
+
       .drop("vCount", "cCount", "categories")
       .filter(($"div" > 5).or($"clickCount" > 30).or($"sz" > 10))
       .select($"ip", $"window.start".alias("date"))
-
-    df1.printSchema()
-    println(df1.isStreaming)
 
     /*
 
@@ -130,9 +145,13 @@ object FraudDetection {
       .format("console")
       .start()
 */
+  }
+  def getWriter( spark:SparkSession):ForeachWriter[Row]={
+
+    val connector = CassandraConnector.apply(spark.sparkContext.getConf)
 
     val writer: ForeachWriter[Row] = new ForeachWriter[Row] {
-      override def open(partitionId: Long, version: Long) = true
+      override def open(partitionId: Long, version: Long): Boolean = true
 
       override def process(value: Row): Unit = {
         println(value)
@@ -155,15 +174,6 @@ object FraudDetection {
       }
 
     }
-
-    val query = df1.writeStream
-      .queryName("server-logs processor")
-      .foreach(writer)
-      .start
-
-    query.awaitTermination()
-    spark.stop()
-
-
+    writer
   }
 }
